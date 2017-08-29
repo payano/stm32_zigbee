@@ -129,40 +129,36 @@ void SpiHandler::run(){
 		    recvData(MRF_INTCON);
 		    osDelay(1); // delay at least 192usec
 
-
-
-
-
 		    // Reset RF module.
-			//sendData(RFCTL, 0x04);
-			//sendData(RFCTL, 0x00);
-			//sendData(RFCTL, 0x00);
-            //
-			//sendData(PANIDL, 0xAA);
-			//sendData(PANIDH, 0xAA);
-			//sendData(SADRL, 0xAA);
-			//sendData(SADRH, 0xAA);
-            //
-		    //// Flush RX fifo.
-            //
-			//recvData(RXFLUSH);
-            //
-            //
-		    //// Write MAC addresses here. We don't care.
-            //
-			//sendLongData(RFCTRL2, 0x80);  // Enable RF PLL.
-            //
-			//sendLongData(RFCTRL3, 0x00);  // Full power.
-			//sendLongData(RFCTRL6, 0x80);  // Enable TX filter (recommended)
-			//sendLongData(RFCTRL8, 0x10);  // Enhanced VCO (recommended)
-            //
-			//sendData(BBREG2,0x78);   // Clear Channel Assesment use carrier sense.
-			//sendData(BBREG6,0x40);   // Calculate RSSI for Rx packet.
-			//sendData(RSSITHCCA,0x00);// RSSI threshold for CCA.
-            //
-			//sendLongData(RFCTRL0, 0x00);  // Channel 11.
-            //
-			//readLongData(RFCTRL0);
+			sendData(RFCTL, 0x04);
+			sendData(RFCTL, 0x00);
+			sendData(RFCTL, 0x00);
+
+			sendData(PANIDL, 0xAA);
+			sendData(PANIDH, 0xAA);
+			sendData(SADRL, 0xAA);
+			sendData(SADRH, 0xAA);
+
+		    // Flush RX fifo.
+
+			recvData(RXFLUSH);
+
+
+		    // Write MAC addresses here. We don't care.
+
+			sendLongData(RFCTRL2, 0x80);  // Enable RF PLL.
+
+			sendLongData(RFCTRL3, 0x00);  // Full power.
+			sendLongData(RFCTRL6, 0x80);  // Enable TX filter (recommended)
+			sendLongData(RFCTRL8, 0x10);  // Enhanced VCO (recommended)
+
+			sendData(BBREG2,0x78);   // Clear Channel Assesment use carrier sense.
+			sendData(BBREG6,0x40);   // Calculate RSSI for Rx packet.
+			sendData(RSSITHCCA,0x00);// RSSI threshold for CCA.
+
+			sendLongData(RFCTRL0, 0x00);  // Channel 11.
+
+			readLongData(RFCTRL0);
             //
 		    ////sendData(RXMCR, 0x01); // Don't check address upon reception.
 		//  ////MrfWriteShort(RXMCR, 0x00); // Check address upon reception.
@@ -347,7 +343,7 @@ void SpiHandler::sendLongData(uint16_t address, uint8_t value)
 {
 
 	//HAL_SPI_TransmitReceive(mSpi_handler, &data, &result, sizeof(data), delay);
-	uint8_t data1 = (((uint8_t)(address>>3))&0x7F)|0x8;
+	uint8_t data1 = (((uint8_t)(address>>3))&0x7F)|0x80;
 	uint8_t data2 = (((uint8_t)(address<<5))&0xE0)|0x10;
 
 	uint8_t datan[] = {data1, data2,value };
