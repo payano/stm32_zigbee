@@ -98,45 +98,45 @@ void SpiHandler::run(){
 			//TEST THIS:
 			//WITH INTERRUPT
 			//https://github.com/karlp/Mrf24j40-arduino-library/blob/master/mrf24j.cpp
-
+			//MRF chipset: http://ww1.microchip.com/downloads/en/DeviceDoc/39776C.pdf
 
 			//Source for init: https://developer.mbed.org/users/hilgo/code/MRF24J40/file/55d2672c4708/MRF24J40.cpp
 
 			sendData(MRF_PACON2, 0x98); // – Initialize FIFOEN = 1 and TXONTS = 0x6.
 			sendData(MRF_TXSTBL, 0x95); // – Initialize RFSTBL = 0x9.
 
-		    sendLongData(MRF_RFCON0, 0x03); // – Initialize RFOPT = 0x03.
-		    sendLongData(MRF_RFCON1, 0x01); // – Initialize VCOOPT = 0x02.
-		    sendLongData(MRF_RFCON2, 0x80); // – Enable PLL (PLLEN = 1).
-		    sendLongData(MRF_RFCON6, 0x90); // – Initialize TXFIL = 1 and 20MRECVR = 1.
-		    sendLongData(MRF_RFCON7, 0x80); // – Initialize SLPCLKSEL = 0x2 (100 kHz Internal oscillator).
-		    sendLongData(MRF_RFCON8, 0x10); // – Initialize RFVCO = 1.
-		    sendLongData(MRF_SLPCON1, 0x21); // – Initialize CLKOUTEN = 1 and SLPCLKDIV = 0x01.
+			sendLongData(MRF_RFCON0, 0x03); // – Initialize RFOPT = 0x03.
+			sendLongData(MRF_RFCON1, 0x01); // – Initialize VCOOPT = 0x02.
+			sendLongData(MRF_RFCON2, 0x80); // – Enable PLL (PLLEN = 1).
+			sendLongData(MRF_RFCON6, 0x90); // – Initialize TXFIL = 1 and 20MRECVR = 1.
+			sendLongData(MRF_RFCON7, 0x80); // – Initialize SLPCLKSEL = 0x2 (100 kHz Internal oscillator).
+			sendLongData(MRF_RFCON8, 0x10); // – Initialize RFVCO = 1.
+			sendLongData(MRF_SLPCON1, 0x21); // – Initialize CLKOUTEN = 1 and SLPCLKDIV = 0x01.
 
-		    //  Configuration for nonbeacon-enabled devices (see Section 3.8 “Beacon-Enabled and
-		    //  Nonbeacon-Enabled Networks”):
-		    sendData(MRF_BBREG2, 0x80); // Set CCA mode to ED
-		    sendData(MRF_CCAEDTH, 0x60); // – Set CCA ED threshold.
-		    sendData(MRF_BBREG6, 0x40); // – Set appended RSSI value to RXFIFO.
-
-
-		    //set_interrupts();
-		    sendData(MRF_INTCON, 0b11110110);
-		    uint8_t channel = 12;
-		    //set_channel(12);
-		    sendData(MRF_RFCON0, (((channel - 11) << 4) | 0x03));
+			//  Configuration for nonbeacon-enabled devices (see Section 3.8 “Beacon-Enabled and
+			//  Nonbeacon-Enabled Networks”):
+			sendData(MRF_BBREG2, 0x80); // Set CCA mode to ED
+			sendData(MRF_CCAEDTH, 0x60); // – Set CCA ED threshold.
+			sendData(MRF_BBREG6, 0x40); // – Set appended RSSI value to RXFIFO.
 
 
-		    // max power is by default.. just leave it...
-		    // Set transmitter power - See “REGISTER 2-62: RF CONTROL 3 REGISTER (ADDRESS: 0x203)”.
-		    sendData(MRF_RFCTL, 0x04); //  – Reset RF state machine.
-		    sendData(MRF_RFCTL, 0x00); // part 2
+			//set_interrupts();
+			sendData(MRF_INTCON, 0b11110110);
+			uint8_t channel = 12;
+			//set_channel(12);
+			sendData(MRF_RFCON0, (((channel - 11) << 4) | 0x03));
 
 
-		    recvData(MRF_INTCON);
-		    osDelay(1); // delay at least 192usec
+			// max power is by default.. just leave it...
+			// Set transmitter power - See “REGISTER 2-62: RF CONTROL 3 REGISTER (ADDRESS: 0x203)”.
+			sendData(MRF_RFCTL, 0x04); //  – Reset RF state machine.
+			sendData(MRF_RFCTL, 0x00); // part 2
 
-		    // Reset RF module.
+
+			recvData(MRF_INTCON);
+			osDelay(1); // delay at least 192usec
+
+			// Reset RF module.
 			sendData(RFCTL, 0x04);
 			sendData(RFCTL, 0x00);
 			sendData(RFCTL, 0x00);
@@ -146,12 +146,12 @@ void SpiHandler::run(){
 			sendData(SADRL, 0xAA);
 			sendData(SADRH, 0xAA);
 
-		    // Flush RX fifo.
+			// Flush RX fifo.
 
 			recvData(RXFLUSH);
 
 
-		    // Write MAC addresses here. We don't care.
+			// Write MAC addresses here. We don't care.
 
 			sendLongData(RFCTRL2, 0x80);  // Enable RF PLL.
 
@@ -167,13 +167,13 @@ void SpiHandler::run(){
 
 			readLongData(RFCTRL0);
 
-		    sendData(RXMCR, 0x01); // Don't check address upon reception.
-		    //MrfWriteShort(RXMCR, 0x00); // Check address upon reception.
-            //
-		    //// Reset RF module with new settings.
-		    sendData(RFCTL, 0x04);
-		    sendData(RFCTL, 0x00);
-            // END OF MBED CODE
+			sendData(RXMCR, 0x01); // Don't check address upon reception.
+			//MrfWriteShort(RXMCR, 0x00); // Check address upon reception.
+			//
+			//// Reset RF module with new settings.
+			sendData(RFCTL, 0x04);
+			sendData(RFCTL, 0x00);
+			// END OF MBED CODE
 
 
             //
