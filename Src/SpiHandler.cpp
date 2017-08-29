@@ -95,6 +95,11 @@ void SpiHandler::run(){
 
 		for(;;){
 
+			//TEST THIS:
+			//WITH INTERRUPT
+			//https://github.com/karlp/Mrf24j40-arduino-library/blob/master/mrf24j.cpp
+
+
 			//Source for init: https://developer.mbed.org/users/hilgo/code/MRF24J40/file/55d2672c4708/MRF24J40.cpp
 
 			sendData(MRF_PACON2, 0x98); // – Initialize FIFOEN = 1 and TXONTS = 0x6.
@@ -161,14 +166,16 @@ void SpiHandler::run(){
 			sendLongData(RFCTRL0, 0x00);  // Channel 11.
 
 			readLongData(RFCTRL0);
+
+		    sendData(RXMCR, 0x01); // Don't check address upon reception.
+		    //MrfWriteShort(RXMCR, 0x00); // Check address upon reception.
             //
-		    ////sendData(RXMCR, 0x01); // Don't check address upon reception.
-		//  ////MrfWriteShort(RXMCR, 0x00); // Check address upon reception.
-            ////
-		    ////// Reset RF module with new settings.
-		    //sendData(RFCTL, 0x04);
-		    //sendData(RFCTL, 0x00);
-            //
+		    //// Reset RF module with new settings.
+		    sendData(RFCTL, 0x04);
+		    sendData(RFCTL, 0x00);
+            // END OF MBED CODE
+
+
             //
 		    //uint8_t data[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a };
 		    //uint8_t i;
