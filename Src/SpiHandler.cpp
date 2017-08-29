@@ -95,6 +95,7 @@ void SpiHandler::run(){
 
 		for(;;){
 
+			//Source for init: https://developer.mbed.org/users/hilgo/code/MRF24J40/file/55d2672c4708/MRF24J40.cpp
 			sendData(MRF_PACON2, 0x98); // – Initialize FIFOEN = 1 and TXONTS = 0x6.
 			sendData(MRF_TXSTBL, 0x95); // – Initialize RFSTBL = 0x9.
 
