@@ -336,20 +336,21 @@ static void MX_GPIO_Init(void)
 /* StartSPIThread function */
 void StartSPIThread(void const * argument)
 {
-	pinIO reset;
-	reset.GPIO = MRF_RESET_GPIO_Port;
-	reset.GPIO_Pin = MRF_RESET_Pin;
+	std::unique_ptr<pinIO> reset;
+	reset->GPIO = MRF_RESET_GPIO_Port;
+	reset->GPIO_Pin = MRF_RESET_Pin;
 
-	pinIO cs;
-	cs.GPIO = MRF_CS_GPIO_Port;
-	cs.GPIO_Pin = MRF_CS_Pin;
+	std::unique_ptr<pinIO> cs;
+	cs->GPIO = MRF_CS_GPIO_Port;
+	cs->GPIO_Pin = MRF_CS_Pin;
 
-	pinIO interrupt;
-	interrupt.GPIO = MRF_INT_GPIO_Port;
-	interrupt.GPIO_Pin = MRF_INT_Pin;
+	std::unique_ptr<pinIO> interrupt;
+	interrupt->GPIO = MRF_INT_GPIO_Port;
+	interrupt->GPIO_Pin = MRF_INT_Pin;
 
-	spiHandler = new SpiHandler(&hspi2, &reset, &cs, &interrupt);
-	spiHandler->run();
+	spiHandler = new SpiHandler(&hspi2, std::move(reset), std::move(cs), std::move(interrupt));
+	//spiHandler = new SpiHandler(&hspi2, reset, cs, interrupt);
+	//spiHandler->run();
 
 }
 

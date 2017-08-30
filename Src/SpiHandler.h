@@ -19,10 +19,10 @@ typedef struct pinIO pinIO;
 
 class SpiHandler {
 private:
-	bool mCallback;
+	bool mCallback = false;
 	SPI_HandleTypeDef *mSpi_handler;
 	//pinIO &mReset, &mCs, &mPin_interrupt;
-	std::unique_ptr<pinIO> pinReset, pinCs, pinInterrupt;
+	const std::unique_ptr<pinIO> pinReset, pinCs, pinInterrupt;
 	uint8_t const bufferSize = 1;
 	const uint8_t delay = 50;
 
@@ -35,7 +35,8 @@ private:
 	void reset(void);
 
 public:
-	SpiHandler(SPI_HandleTypeDef* spi_handler, pinIO* pinReset, pinIO* pinCs, pinIO* pinInterrupt);
+	SpiHandler(SPI_HandleTypeDef* spi_handler, std::unique_ptr<pinIO> pinReset, std::unique_ptr<pinIO> pinCs, std::unique_ptr<pinIO> pinInterrupt);
+	SpiHandler(SPI_HandleTypeDef* spi_handler, std::unique_ptr<pinIO> pinReset);
 	virtual ~SpiHandler();
 	virtual void run();
 	virtual void int_callback();
