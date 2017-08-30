@@ -6,13 +6,21 @@
  */
 
 #include "SpiHandler.h"
+#include <iostream>
 
-SpiHandler::SpiHandler(SPI_HandleTypeDef* spi_handler, pinIO& pin_reset, pinIO& pin_chip_select, pinIO& pin_interrupt):
-	mSpi_handler(spi_handler), mReset(pin_reset), mCs(pin_chip_select), mPin_interrupt(pin_interrupt), mCallback(false)
-{
+SpiHandler::SpiHandler(
+		SPI_HandleTypeDef* spi_handler,
+		std::unique_ptr<pinIO>&& pinReset,
+		std::unique_ptr<pinIO>&& pinCs,
+		std::unique_ptr<pinIO>&& pinInterrupt):
+		mSpi_handler(spi_handler),
+		pinReset(std::move(pinReset)),
+		pinCs(std::move(pinCs)),
+		pinInterrupt(std::move(pinInterrupt)){
 	HAL_SPI_Init(mSpi_handler);
-}
+	reset();
 
+}
 
 SpiHandler::~SpiHandler() {
 	// TODO Auto-generated destructor stub

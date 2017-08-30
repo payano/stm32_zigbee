@@ -10,7 +10,7 @@
 #include "main.h"
 #include "stm32f3xx_hal.h"
 #include "cmsis_os.h"
-
+#include <memory>
 struct pinIO{
 	GPIO_TypeDef* GPIO;
 	uint16_t GPIO_Pin;
@@ -21,7 +21,8 @@ class SpiHandler {
 private:
 	bool mCallback;
 	SPI_HandleTypeDef *mSpi_handler;
-	pinIO &mReset, &mCs, &mPin_interrupt;
+	//pinIO &mReset, &mCs, &mPin_interrupt;
+	std::unique_ptr<pinIO> pinReset, pinCs, pinInterrupt;
 	uint8_t const bufferSize = 1;
 	const uint8_t delay = 50;
 
@@ -34,7 +35,7 @@ private:
 	void reset(void);
 
 public:
-	SpiHandler(SPI_HandleTypeDef* spi_handler, pinIO& pin_reset, pinIO& pin_chip_select, pinIO& pin_interrupt);
+	SpiHandler(SPI_HandleTypeDef* spi_handler, std::unique_ptr<pinIO>&& pinReset, std::unique_ptr<pinIO>&& pinCs, std::unique_ptr<pinIO>&& pinInterrupt);
 	virtual ~SpiHandler();
 	virtual void run();
 	virtual void int_callback();
