@@ -10,13 +10,10 @@
 
 SpiHandler::SpiHandler(
 		SPI_HandleTypeDef* spi_handler,
-		std::unique_ptr<pinIO>&& pinReset,
-		std::unique_ptr<pinIO>&& pinCs,
-		std::unique_ptr<pinIO>&& pinInterrupt):
-		mSpi_handler(spi_handler),
-		pinReset(std::move(pinReset)),
-		pinCs(std::move(pinCs)),
-		pinInterrupt(std::move(pinInterrupt)){
+		pinIO *pinReset,
+		pinIO *pinCs,
+		pinIO *pinInterrupt):
+		mSpi_handler(spi_handler){
 	HAL_SPI_Init(mSpi_handler);
 	reset();
 

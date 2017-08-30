@@ -35,7 +35,7 @@ private:
 	void reset(void);
 
 public:
-	SpiHandler(SPI_HandleTypeDef* spi_handler, std::unique_ptr<pinIO>&& pinReset, std::unique_ptr<pinIO>&& pinCs, std::unique_ptr<pinIO>&& pinInterrupt);
+	SpiHandler(SPI_HandleTypeDef* spi_handler, pinIO* pinReset, pinIO* pinCs, pinIO* pinInterrupt);
 	virtual ~SpiHandler();
 	virtual void run();
 	virtual void int_callback();
