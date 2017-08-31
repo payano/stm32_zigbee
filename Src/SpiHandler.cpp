@@ -47,7 +47,7 @@ void SpiHandler::run(){
 }
 
 
-void SpiHandler::sendData(uint8_t address, uint8_t data){
+void SpiHandler::sendData(uint8_t address, uint8_t value){
 	//Mask data correctly before sending.
 	address = address << 1;
 	address &= 0b01111111;
@@ -58,7 +58,7 @@ void SpiHandler::sendData(uint8_t address, uint8_t data){
 
 	//Send address and data
 	HAL_SPI_Transmit(mSpi_handler,&address, 1, 1);
-	HAL_SPI_Transmit(mSpi_handler,&data, 1, 1);
+	HAL_SPI_Transmit(mSpi_handler,&value, 1, 1);
 
 	//Disable transfer to mrf.
 	HAL_GPIO_WritePin(MRF_CS_GPIO_Port, MRF_CS_Pin, GPIO_PIN_SET);
@@ -89,15 +89,15 @@ void  SpiHandler::recvData(uint8_t address, uint8_t* result){
 void SpiHandler::sendLongData(uint16_t address, uint8_t value)
 {
 	//Mask data correctly before sending.
-	uint8_t data1 = (((uint8_t)(address>>3))&0x7F)|0x80;
-	uint8_t data2 = (((uint8_t)(address<<5))&0xE0)|0x10;
+	uint8_t address1 = (((uint8_t)(address>>3))&0x7F)|0x80;
+	uint8_t address2 = (((uint8_t)(address<<5))&0xE0)|0x10;
 
 	//Enable CS Pin, make MRF aware of incoming message.
 	HAL_GPIO_WritePin(MRF_CS_GPIO_Port, MRF_CS_Pin, GPIO_PIN_RESET);
 
 	//Send address and data
-	HAL_SPI_Transmit(mSpi_handler, &data1, 1, 1);
-	HAL_SPI_Transmit(mSpi_handler, &data2, 1, 1);
+	HAL_SPI_Transmit(mSpi_handler, &address1, 1, 1);
+	HAL_SPI_Transmit(mSpi_handler, &address2, 1, 1);
 	HAL_SPI_Transmit(mSpi_handler, &value, 1, 1);
 
 	//Disable transfer to mrf.
