@@ -27,7 +27,7 @@ private:
 	const uint8_t delay = 50;
 
 	void _initMRF();
-	void sendData(uint8_t address, uint8_t data);
+	void sendData(uint8_t address, uint8_t value);
 	void recvData(uint8_t address, uint8_t* result);
 	void sendLongData(uint16_t address, uint8_t value);
 	void readLongData(uint16_t address, uint8_t* result);
