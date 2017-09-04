@@ -53,7 +53,7 @@
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
-#include "SpiHandler.h"
+#include "Mrf24j.h"
 
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi2;
@@ -61,7 +61,7 @@ TIM_HandleTypeDef htim2;
 
 osThreadId SpiThreadHandle;
 
-SpiHandler *spiHandler;
+Mrf24j *mrf24j;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
@@ -348,7 +348,7 @@ void StartSPIThread(void const * argument)
 	interrupt->GPIO = MRF_INT_GPIO_Port;
 	interrupt->GPIO_Pin = MRF_INT_Pin;
 
-	spiHandler = new SpiHandler(&hspi2, std::move(reset), std::move(cs), std::move(interrupt));
+	mrf24j = new Mrf24j(&hspi2, std::move(reset), std::move(cs), std::move(interrupt));
 	//spiHandler = new SpiHandler(&hspi2, reset, cs, interrupt);
 	//spiHandler->run();
 
@@ -368,7 +368,7 @@ void ledToggle(uint8_t *toggled){
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == MRF_INT_Pin){
-		spiHandler->int_callback();
+		mrf24j->int_callback();
 
 	}
 
