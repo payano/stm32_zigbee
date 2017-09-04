@@ -40,6 +40,7 @@ typedef struct _tx_info_t{
 
 struct pinIO{
 	GPIO_TypeDef* GPIO;
+	uint16_t YOLO;
 	uint16_t GPIO_Pin;
 };
 typedef struct pinIO pinIO;
@@ -47,8 +48,7 @@ typedef struct pinIO pinIO;
 class Mrf24j {
 public:
     void check_flags(void (*rx_handler)(void), void (*tx_handler)(void));
-	Mrf24j(SPI_HandleTypeDef* spi_handler, std::unique_ptr<pinIO> pinReset, std::unique_ptr<pinIO> pinCs, std::unique_ptr<pinIO> pinInterrupt);
-	Mrf24j(SPI_HandleTypeDef* spi_handler, std::unique_ptr<pinIO> pinReset);
+	Mrf24j(SPI_HandleTypeDef* spi_handler, pinIO& pinReset, pinIO& pinCs, pinIO& pinInterrupt);
 	virtual ~Mrf24j();
 	virtual void run();
 	virtual void int_callback();
@@ -122,7 +122,7 @@ private:
 
 	//Data members
 	SPI_HandleTypeDef *mSpi_handler;
-	const std::unique_ptr<pinIO> mPinReset, mPinCs, mPinInterrupt;
+	pinIO& mPinReset, mPinCs, mPinInterrupt;
 	bool mCallback = false;
     //might not be const...
 	//pinIO &mReset, &mCs, &mPin_interrupt;

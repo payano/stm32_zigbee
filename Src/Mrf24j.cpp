@@ -161,13 +161,13 @@ static tx_info_t tx_info;
 
 Mrf24j::Mrf24j(
 		SPI_HandleTypeDef* spi_handler,
-		std::unique_ptr<pinIO> pinReset,
-		std::unique_ptr<pinIO> pinCs,
-		std::unique_ptr<pinIO> pinInterrupt):
+		pinIO& pinReset,
+		pinIO& pinCs,
+		pinIO& pinInterrupt):
 		mSpi_handler(spi_handler),
-		mPinReset(std::move(pinReset)),
-		mPinCs(std::move(pinCs)),
-		mPinInterrupt(std::move(pinInterrupt))
+		mPinReset(pinReset),
+		mPinCs(pinCs),
+		mPinInterrupt(pinInterrupt)
 {
 
 }
@@ -177,6 +177,10 @@ Mrf24j::~Mrf24j() {
 }
 void Mrf24j::run(){
 
+	while(true){
+		set_channel(12);
+	}
+
 }
 
 void Mrf24j::int_callback(){
@@ -185,9 +189,9 @@ void Mrf24j::int_callback(){
 
 void Mrf24j::reset(void){
 	//https://github.com/karlp/Mrf24j40-arduino-library/blob/master/mrf24j.cpp#L1
-	HAL_GPIO_WritePin(mPinReset->GPIO, mPinReset->GPIO_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(mPinReset.GPIO, mPinReset.GPIO_Pin, GPIO_PIN_RESET);
 	osDelay(10);
-	HAL_GPIO_WritePin(mPinReset->GPIO, mPinReset->GPIO_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(mPinReset.GPIO, mPinReset.GPIO_Pin, GPIO_PIN_SET);
 	osDelay(20);
 }
 
@@ -222,6 +226,18 @@ void Mrf24j::init(void) {
     write_short(MRF_RFCTL, 0x04); //  – Reset RF state machine.
     write_short(MRF_RFCTL, 0x00); // part 2
     osDelay(1); // delay at least 192usec
+}
+
+void Mrf24j::set_interrupts(void) {
+    // interrupts for rx and tx normal complete
+    write_short(MRF_INTCON, 0b11110110);
+}
+
+/** use the 802.15.4 channel numbers..
+ */
+void Mrf24j::set_channel(uint8_t channel) {
+    write_long(MRF_RFCON0, (((channel - 11) << 4) | 0x03));
+    read_long(MRF_RFCON0);
 }
 
 /**
@@ -361,17 +377,15 @@ uint8_t Mrf24j::read_short(uint8_t address){
 	address &= 0b01111110;
 
 	//Enable CS Pin, make MRF aware of incoming message.
-	HAL_GPIO_WritePin(mPinCs->GPIO, mPinCs->GPIO_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_RESET);
 
 	//Send address and receive data
 	HAL_SPI_Transmit(mSpi_handler,&address, bufferSize, 1);
 	HAL_SPI_Receive(mSpi_handler,&result_data,bufferSize, 1);
 
 	//Disable transfer to mrf.
-	HAL_GPIO_WritePin(mPinCs->GPIO, mPinCs->GPIO_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_SET);
 
-	//Delay 1 ms
-	HAL_Delay(1);
 	return result_data;
 }
 uint8_t Mrf24j::read_long(uint16_t address){
@@ -382,7 +396,7 @@ uint8_t Mrf24j::read_long(uint16_t address){
 	uint8_t address2 = ((address<<5)&0xE0);
 
 	//Enable CS Pin, make MRF aware of incoming message.
-	HAL_GPIO_WritePin(mPinCs->GPIO, mPinCs->GPIO_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_RESET);
 
 	//Send address and receieve data
 	HAL_SPI_Transmit(mSpi_handler,&address1, 1, 1);
@@ -390,10 +404,8 @@ uint8_t Mrf24j::read_long(uint16_t address){
 	HAL_SPI_Receive(mSpi_handler, &result_data, 1, 1);
 
 	//Disable transfer to mrf.
-	HAL_GPIO_WritePin(mPinCs->GPIO, mPinCs->GPIO_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_SET);
 
-	//Delay 1 ms
-	HAL_Delay(1);
 	return result_data;
 }
 void Mrf24j::write_short(uint8_t address, uint8_t data){
@@ -403,18 +415,14 @@ void Mrf24j::write_short(uint8_t address, uint8_t data){
 	address |= 0x01;
 
 	//Enable CS Pin, make MRF aware of incoming message.
-	HAL_GPIO_WritePin(mPinCs->GPIO, mPinCs->GPIO_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_RESET);
 
 	//Send address and data
 	HAL_SPI_Transmit(mSpi_handler,&address, 1, 1);
 	HAL_SPI_Transmit(mSpi_handler,&data, 1, 1);
 
 	//Disable transfer to mrf.
-	HAL_GPIO_WritePin(mPinCs->GPIO, mPinCs->GPIO_Pin, GPIO_PIN_SET);
-
-	//Delay 1 ms
-	HAL_Delay(1);
-
+	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_SET);
 }
 void Mrf24j::write_long(uint16_t address, uint8_t data)
 {
@@ -423,7 +431,7 @@ void Mrf24j::write_long(uint16_t address, uint8_t data)
 	uint8_t address2 = (((uint8_t)(address<<5))&0xE0)|0x10;
 
 	//Enable CS Pin, make MRF aware of incoming message.
-	HAL_GPIO_WritePin(mPinCs->GPIO, mPinCs->GPIO_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_RESET);
 
 	//Send address and data
 	HAL_SPI_Transmit(mSpi_handler, &address1, 1, 1);
@@ -431,9 +439,6 @@ void Mrf24j::write_long(uint16_t address, uint8_t data)
 	HAL_SPI_Transmit(mSpi_handler, &data, 1, 1);
 
 	//Disable transfer to mrf.
-	HAL_GPIO_WritePin(mPinCs->GPIO, mPinCs->GPIO_Pin, GPIO_PIN_SET);
-
-	//Delay 1 ms
-	HAL_Delay(1);
+	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_SET);
 }
 
