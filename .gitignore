@@ -1,6 +1,6 @@
 #ignore .d and .o files
-!*.o
-!*.d
+*.o
+*.d
 
 #ignore folder debug
-!Debug/*
+Debug/*
