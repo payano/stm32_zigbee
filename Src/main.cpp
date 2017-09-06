@@ -73,7 +73,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
 //static void MX_TIM2_Init(void);
-void StartSPIThread(void const * argument);
+void StartMRFThread(void const * argument);
 void EXTI9_5_IRQHandler(void);
 void ledToggle(uint8_t *toggled);
 /* USER CODE BEGIN PFP */
@@ -108,7 +108,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of SpiThread */
-  osThreadDef(SpiThread, StartSPIThread, osPriorityNormal, 0, 128);
+  osThreadDef(SpiThread, StartMRFThread, osPriorityNormal, 0, 128);
   SpiThreadHandle = osThreadCreate(osThread(SpiThread), NULL);
 
   /* Start scheduler */
@@ -333,8 +333,8 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE END 4 */
 
-/* StartSPIThread function */
-void StartSPIThread(void const * argument)
+/* StartMRFThread function */
+void StartMRFThread(void const * argument)
 {
 	pinIO reset;
 	reset.GPIO = MRF_RESET_GPIO_Port;
@@ -350,6 +350,7 @@ void StartSPIThread(void const * argument)
 	interrupt.GPIO_Pin = MRF_INT_Pin;
 
 	mrf24j = new Mrf24j(&hspi2, reset, cs, interrupt);
+	mrf24j->reset();
 	mrf24j->init();
 	mrf24j->run();
 

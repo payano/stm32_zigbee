@@ -178,7 +178,7 @@ Mrf24j::~Mrf24j() {
 void Mrf24j::run(){
 
 	while(true){
-		set_channel(12);
+		init();
 	}
 
 }
