@@ -253,6 +253,9 @@ void Mrf24j::interrupt_handler(void) {
         // read out the packet data...
         //TODO FIX THIS
         //noInterrupts();
+        //TODO FIX PROPER HANDLER FOR INTERRUPT
+        interrupt(false);
+
         rx_disable();
         // read start of rxfifo for, has 2 bytes more added by FCS. frame_length = m + n + 2
         uint8_t frame_length = read_long(0x300);
@@ -279,7 +282,9 @@ void Mrf24j::interrupt_handler(void) {
         rx_info.rssi = read_long(0x301 + frame_length + 1);
 
         rx_enable();
+
         //TODO FIX THIS
+        interrupt(true);
         //interrupts();
     }
     if (last_interrupt & MRF_I_TXNIF) {
@@ -442,3 +447,14 @@ void Mrf24j::write_long(uint16_t address, uint8_t data)
 	HAL_GPIO_WritePin(mPinCs.GPIO, mPinCs.GPIO_Pin, GPIO_PIN_SET);
 }
 
+void Mrf24j::interrupt(bool value){
+	//Todo fix this handler to be better implemented.
+	switch(value){
+	case true:
+		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+		break;
+	default:
+		HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+		break;
+	}
+}

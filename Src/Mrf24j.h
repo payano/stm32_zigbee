@@ -120,6 +120,8 @@ private:
 	void sendLongData(uint16_t address, uint8_t value);
 	void readLongData(uint16_t address, uint8_t* result);
 
+	//this is just temporary
+	void interrupt(bool value);
 	//Data members
 	SPI_HandleTypeDef *mSpi_handler;
 	pinIO& mPinReset, mPinCs, mPinInterrupt;

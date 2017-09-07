@@ -371,11 +371,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == MRF_INT_Pin){
 		mrf24j->int_callback();
-
+		//Enable IRQ
+		//HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 	}
 
-}
 
+
+}
 
 /* USER CODE END 5 */
 
@@ -413,6 +415,7 @@ void assert_failed(uint8_t* file, uint32_t line)
 }
 
 #endif
+
 
 /**
   * @}
