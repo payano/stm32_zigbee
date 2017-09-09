@@ -13,6 +13,7 @@
 #include "stm32f3xx_hal.h"
 #include "cmsis_os.h"
 #include <memory>
+#include <string.h>
 
 typedef struct _rx_info_t{
 	uint8_t frame_length;

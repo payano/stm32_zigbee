@@ -350,7 +350,12 @@ void StartMRFThread(void const * argument)
 	interrupt.GPIO_Pin = MRF_INT_Pin;
 
 	mrf24j = new Mrf24j(&hspi2, reset, cs, interrupt);
+
 	mrf24j->reset();
+	mrf24j->set_pan(0xcafe);
+	// This is _our_ address
+	mrf24j->address16_write(0x6001);
+
 	mrf24j->init();
 	mrf24j->run();
 
@@ -370,9 +375,9 @@ void ledToggle(uint8_t *toggled){
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == MRF_INT_Pin){
-		mrf24j->int_callback();
+		mrf24j->interrupt_handler();
 		//Enable IRQ
-		//HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 	}
 
 
