@@ -76,8 +76,8 @@ void EXTI9_5_IRQHandler(void);
 void ledToggle(uint8_t *toggled);
 
 
-constexpr int NUMBER_OF_MAILBOXES = 2;
-constexpr int NUMBER_OF_MESSAGES  = 5;
+constexpr int NUMBER_OF_MAILBOXES = 3;
+constexpr int NUMBER_OF_MESSAGES  = 10;
 
 std::vector<QueueHandle_t> mailboxes;
 
