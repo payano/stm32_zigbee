@@ -177,11 +177,11 @@ Mrf24j::~Mrf24j() {
 }
 void Mrf24j::run(){
 
-	while(true){
+//	while(true){
 		char kalle[] = "abcd";
 		send16(0x4202, kalle);
-		osDelay(100);
-	}
+		osDelay(1000);
+//	}
 
 }
 

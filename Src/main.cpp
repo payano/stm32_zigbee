@@ -49,41 +49,38 @@
 #include "main.h"
 #include "stm32f3xx_hal.h"
 #include "cmsis_os.h"
-
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
+//Johans stash:
+#include "Message.h"
 #include "Mrf24j.h"
-
+#include <vector>
+#include <memory>
+#include <task.h> //vtaskdelayuntil
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi2;
 TIM_HandleTypeDef htim2;
 
-osThreadId SpiThreadHandle;
+osThreadId radioThreadHandle;
+osThreadId buttonThreadHandle;
+osThreadId ledThreadHandle;
 
 Mrf24j *mrf24j;
 
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
 //static void MX_TIM2_Init(void);
-void StartMRFThread(void const * argument);
+void StartRadioThread(void const * argument);
+void StartButtonThread(void const * argument);
+void StartLedThread(void const * argument);
 void EXTI9_5_IRQHandler(void);
 void ledToggle(uint8_t *toggled);
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
 
-/* USER CODE END PFP */
 
-/* USER CODE BEGIN 0 */
+constexpr int NUMBER_OF_MAILBOXES = 2;
+constexpr int NUMBER_OF_MESSAGES  = 5;
 
-/* USER CODE END 0 */
+std::vector<QueueHandle_t> mailboxes;
+
 
 int main(void)
 {
@@ -94,23 +91,26 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI2_Init();
   //MX_TIM2_Init();
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+//
+  for(int i = 0 ; i < NUMBER_OF_MAILBOXES; ++i){
+	  mailboxes.push_back(
+			  xQueueCreate(
+					  NUMBER_OF_MESSAGES, //max items in mailbox
+					  sizeof(Message)	  //mailbox size
+    			  )
+	    	 );
+  }
 
   /* Create the thread(s) */
   /* definition and creation of SpiThread */
-  osThreadDef(SpiThread, StartMRFThread, osPriorityNormal, 0, 128);
-  SpiThreadHandle = osThreadCreate(osThread(SpiThread), NULL);
+  osThreadDef(radioThread, StartRadioThread, osPriorityNormal, 0, 128);
+  radioThreadHandle = osThreadCreate(osThread(radioThread), NULL);
 
+  osThreadDef(buttonThread, StartButtonThread, osPriorityNormal, 0, 128);
+  buttonThreadHandle = osThreadCreate(osThread(buttonThread), NULL);
+
+  osThreadDef(ledThread, StartLedThread, osPriorityNormal, 0, 128);
+  ledThreadHandle = osThreadCreate(osThread(ledThread), NULL);
   /* Start scheduler */
   osKernelStart();
   
@@ -332,9 +332,39 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+void StartLedThread(void const * argument){
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 1000;
+	xLastWakeTime=xTaskGetTickCount();
+
+	int address = 5;
+	int value = 7;
+	while(1){
+		Message skicka(++address,++value);
+		if(errQUEUE_FULL == xQueueSend(mailboxes[0], &skicka,10)){
+			//error handling, message not sent.
+		}
+		vTaskDelayUntil(&xLastWakeTime, xFrequency);
+	}
+
+}
+void StartButtonThread(void const * argument){
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 1000;
+	xLastWakeTime=xTaskGetTickCount();
+
+	while(1){
+		Message mottaget;
+		if(errQUEUE_FULL == xQueueReceive(mailboxes[0],&mottaget,10)){
+			//error handling, message not received.
+
+		}
+		vTaskDelayUntil(&xLastWakeTime, xFrequency);
+	}
+}
 
 /* StartMRFThread function */
-void StartMRFThread(void const * argument)
+void StartRadioThread(void const * argument)
 {
 	pinIO reset;
 	reset.GPIO = MRF_RESET_GPIO_Port;
@@ -350,6 +380,7 @@ void StartMRFThread(void const * argument)
 	interrupt.GPIO_Pin = MRF_INT_Pin;
 
 	mrf24j = new Mrf24j(&hspi2, reset, cs, interrupt);
+	int kalle = sizeof(mrf24j);
 
 	mrf24j->reset();
 	mrf24j->set_pan(0xcafe);
@@ -357,7 +388,15 @@ void StartMRFThread(void const * argument)
 	mrf24j->address16_write(0x6001);
 
 	mrf24j->init();
-	mrf24j->run();
+
+	TickType_t xLastWakeTime;
+	const TickType_t xFrequency = 1000;
+	xLastWakeTime=xTaskGetTickCount();
+	while(1){
+		mrf24j->run();
+		vTaskDelayUntil(&xLastWakeTime, xFrequency);
+	}
+
 
 }
 
