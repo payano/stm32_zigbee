@@ -3,120 +3,226 @@
   * File Name          : main.c
   * Description        : Main program body
   ******************************************************************************
-  * This notice applies to any and all portions of this file
+  ** This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
+  * USER CODE END. Other portions of this file, whether
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2017 STMicroelectronics International N.V. 
-  * All rights reserved.
+  * COPYRIGHT(c) 2017 STMicroelectronics
   *
-  * Redistribution and use in source and binary forms, with or without 
-  * modification, are permitted, provided that the following conditions are met:
+  * Redistribution and use in source and binary forms, with or without modification,
+  * are permitted provided that the following conditions are met:
+  *   1. Redistributions of source code must retain the above copyright notice,
+  *      this list of conditions and the following disclaimer.
+  *   2. Redistributions in binary form must reproduce the above copyright notice,
+  *      this list of conditions and the following disclaimer in the documentation
+  *      and/or other materials provided with the distribution.
+  *   3. Neither the name of STMicroelectronics nor the names of its contributors
+  *      may be used to endorse or promote products derived from this software
+  *      without specific prior written permission.
   *
-  * 1. Redistribution of source code must retain the above copyright notice, 
-  *    this list of conditions and the following disclaimer.
-  * 2. Redistributions in binary form must reproduce the above copyright notice,
-  *    this list of conditions and the following disclaimer in the documentation
-  *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other 
-  *    contributors to this software may be used to endorse or promote products 
-  *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this 
-  *    software, must execute solely and exclusively on microcontroller or
-  *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under 
-  *    this license is void and will automatically terminate your rights under 
-  *    this license. 
-  *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-  * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
-  * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
   */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f3xx_hal.h"
-#include "cmsis_os.h"
-//Johans stash:
-#include "Message.h"
 #include "Mrf24j.h"
-#include <vector>
-#include <memory>
-#include <task.h> //vtaskdelayuntil
+#include <stdlib.h>
+
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi2;
-TIM_HandleTypeDef htim2;
 
-osThreadId radioThreadHandle;
-osThreadId buttonThreadHandle;
-osThreadId ledThreadHandle;
+UART_HandleTypeDef huart3;
 
-Mrf24j *mrf24j;
+/* USER CODE BEGIN PV */
+/* Private variables ---------------------------------------------------------*/
 
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
-//static void MX_TIM2_Init(void);
-void StartRadioThread(void const * argument);
-void StartButtonThread(void const * argument);
-void StartLedThread(void const * argument);
-void EXTI9_5_IRQHandler(void);
-void ledToggle(uint8_t *toggled);
+static void MX_USART3_UART_Init(void);
 
+/* USER CODE BEGIN PFP */
+/* Private function prototypes -----------------------------------------------*/
 
-constexpr int NUMBER_OF_MAILBOXES = 3;
-constexpr int NUMBER_OF_MESSAGES  = 10;
+/* USER CODE END PFP */
 
-std::vector<QueueHandle_t> mailboxes;
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+void rx_handl();
+void tx_handl();
+uint8_t recvBuf[1];
+constexpr uint16_t RECV_SIZE = 1;
+Mrf24j *mrf24j;
 
 
 int main(void)
 {
+
+  /* USER CODE BEGIN 1 */
+
+  /* USER CODE END 1 */
+
+  /* MCU Configuration----------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
   /* Configure the system clock */
   SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI2_Init();
-  //MX_TIM2_Init();
-//
-  for(int i = 0 ; i < NUMBER_OF_MAILBOXES; ++i){
-	  mailboxes.push_back(
-			  xQueueCreate(
-					  NUMBER_OF_MESSAGES, //max items in mailbox
-					  sizeof(Message)	  //mailbox size
-    			  )
-	    	 );
+  MX_USART3_UART_Init();
+
+  gpio_pin pin_reset, pin_chip_select, pin_interrupt;
+
+  pin_chip_select.port = SPI_CS_GPIO_Port;
+  pin_chip_select.pin = SPI_CS_Pin;
+
+  pin_reset.port = MRF_RESET_GPIO_Port;
+  pin_reset.pin = MRF_RESET_Pin;
+
+  mrf24j = new Mrf24j(&hspi2, &pin_reset, &pin_chip_select, &pin_interrupt);
+  //Mrf24j mrf24j(&hspi2, &pin_reset, &pin_chip_select, &pin_interrupt);
+
+  HAL_Delay(20);
+
+  mrf24j->reset();
+  mrf24j->init();
+
+  mrf24j->set_pan(0x0023);
+  // This is _our_ address
+  mrf24j->address16_write(0x6001);
+
+  //(word dest16, char * data, byte len) {
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+
+  HAL_UART_Receive_IT(&huart3, recvBuf, RECV_SIZE);
+
+  uint8_t data[] = "WELCOME\n\r";
+  uint8_t size = sizeof(data) / sizeof(data[0]);
+  HAL_UART_Transmit_IT(&huart3, data, size);
+
+  //char one[] = "ABCDEFGIH";
+  char one[] = {
+      0xf4, 0x3e, 0x01, 0xff, 0xff,
+      0x2e, 0x21, 0x00, 0x0b, 0x00, 0x0b, 0x00, 0x10, 0x5e, 0xc0, 0x00, 0x5d, 0x00, 0x5d,
+      0x80, 0x39, 0x47, 0x02, 0x33, 0xff, 0xff};
+  int da_size = sizeof(one) / sizeof(one[0]);
+  mrf24j->send16(0xffff, one, da_size);
+
+  while (1)
+  {
+
+    //mrf24j->interrupt_handler();
+    //HAL_Delay(100);
+    //mrf24j->check_flags(rx_handl, tx_handl);
+    mrf24j->send16(0xffff, one, da_size);
+
+    //HAL_Delay(10);
+    //mrf24j->read_long(MRF_RFCON0);
+    //mrf24j->interrupt_handler();
+    //mrf24j->check_flags(rx_handl, tx_handl);
+
+
+    HAL_Delay(10000);
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+
+  }
+  /* USER CODE END 3 */
+
+}
+void rx_handl(){
+
+}
+void tx_handl(){
+
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+  // Reactivate uart recv.
+
+  switch(recvBuf[0])
+  {
+  case 13:
+  {
+    uint8_t data[] = "\n\r";
+    HAL_UART_Transmit(huart, data, 2, 10);
+  }
+  break;
+  case '1':
+  {
+    uint8_t ret[1];
+    ret[0] = mrf24j->get_channel();
+    ret[0] += 48 ; // Get ascii representation of decimal numbers.
+
+    uint8_t mess1[] = "CHANNEL: 1";
+    uint8_t size1 = sizeof(mess1) / sizeof(mess1[0]);
+    HAL_UART_Transmit(huart, mess1, size1,10);
+    HAL_UART_Transmit(huart, ret, 1,10);
+    uint8_t mess2[] = "\n\r";
+    HAL_UART_Transmit(huart, mess2, 2,10);
+  }
+    break;
+  case '2':
+  {
+    uint16_t ret[2];
+    ret[0] = mrf24j->get_pan();
+    ret[1] = mrf24j->read_long(MRF_RFCON3);
+    ret[0] += 48 ; // Get ascii representation of decimal numbers.
+
+    uint8_t mess1[] = "CHANNEL: 1";
+    uint8_t size1 = sizeof(mess1) / sizeof(mess1[0]);
+    HAL_UART_Transmit(huart, mess1, size1,10);
+    //HAL_UART_Transmit(huart, ret, 1,10);
+    uint8_t mess2[] = "\n\r";
+    HAL_UART_Transmit(huart, mess2, 2,10);
+  }
+  break;
+  case '3':
+  {
+    mrf24j->set_pan(0x0077);
+  }
+  break;
+  default:
+    HAL_UART_Transmit(huart, recvBuf, RECV_SIZE,10);
+
   }
 
-  /* Create the thread(s) */
-  /* definition and creation of SpiThread */
-  osThreadDef(radioThread, StartRadioThread, osPriorityNormal, 0, 128);
-  radioThreadHandle = osThreadCreate(osThread(radioThread), NULL);
-
-  osThreadDef(buttonThread, StartButtonThread, osPriorityNormal, 0, 128);
-  buttonThreadHandle = osThreadCreate(osThread(buttonThread), NULL);
-
-  osThreadDef(ledThread, StartLedThread, osPriorityNormal, 0, 128);
-  ledThreadHandle = osThreadCreate(osThread(ledThread), NULL);
-  /* Start scheduler */
-  osKernelStart();
-  
-  /* We should never get here as control is now taken by the scheduler */
-  /* Infinite loop */
-  while (1){; }
+  HAL_UART_Receive_IT(huart, recvBuf, RECV_SIZE);
 }
 
 /** System Clock Configuration
@@ -126,8 +232,9 @@ void SystemClock_Config(void)
 
   RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
-    /**Initializes the CPU, AHB and APB busses clocks 
+    /**Initializes the CPU, AHB and APB busses clocks
     */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -141,7 +248,7 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Initializes the CPU, AHB and APB busses clocks 
+    /**Initializes the CPU, AHB and APB busses clocks
     */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -155,16 +262,23 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Configure the Systick interrupt time 
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART3;
+  PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Configure the Systick interrupt time
     */
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
-    /**Configure the Systick 
+    /**Configure the Systick
     */
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 15, 0);
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
 /* SPI2 init function */
@@ -177,8 +291,8 @@ static void MX_SPI2_Init(void)
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi2.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -192,34 +306,21 @@ static void MX_SPI2_Init(void)
 
 }
 
-/* TIM2 init function */
-static void MX_TIM2_Init(void)
+/* USART3 init function */
+static void MX_USART3_UART_Init(void)
 {
 
-  TIM_SlaveConfigTypeDef sSlaveConfig;
-  TIM_MasterConfigTypeDef sMasterConfig;
-
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 10000;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_EXTERNAL1;
-  sSlaveConfig.InputTrigger = TIM_TS_ITR0;
-  if (HAL_TIM_SlaveConfigSynchronization(&htim2, &sSlaveConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 38400;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -227,8 +328,8 @@ static void MX_TIM2_Init(void)
 }
 
 /** Configure pins as 
-        * Analog 
-        * Input 
+        * Analog
+        * Input
         * Output
         * EVENT_OUT
         * EXTI
@@ -251,15 +352,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, CS_I2C_SPI_Pin|LD4_Pin|LD3_Pin|LD5_Pin 
-                          |LD7_Pin|LD9_Pin|LD10_Pin|LD8_Pin 
+                          |LD7_Pin|LD9_Pin|LD10_Pin|LD8_Pin
                           |LD6_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, MRF_CS_Pin|MRF_RESET_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(MRF_RESET_GPIO_Port, MRF_RESET_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : DRDY_Pin MEMS_INT3_Pin MEMS_INT4_Pin MEMS_INT1_Pin 
                            MEMS_INT2_Pin */
@@ -273,12 +376,19 @@ static void MX_GPIO_Init(void)
                            LD7_Pin LD9_Pin LD10_Pin LD8_Pin 
                            LD6_Pin */
   GPIO_InitStruct.Pin = CS_I2C_SPI_Pin|LD4_Pin|LD3_Pin|LD5_Pin 
-                          |LD7_Pin|LD9_Pin|LD10_Pin|LD8_Pin 
+                          |LD7_Pin|LD9_Pin|LD10_Pin|LD8_Pin
                           |LD6_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPI_CS_Pin */
+  GPIO_InitStruct.Pin = SPI_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(SPI_CS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -294,18 +404,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : MRF_CS_Pin MRF_RESET_Pin */
-  GPIO_InitStruct.Pin = MRF_CS_Pin|MRF_RESET_Pin;
+  /*Configure GPIO pin : MRF_RESET_Pin */
+  GPIO_InitStruct.Pin = MRF_RESET_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : MRF_INT_Pin */
-  GPIO_InitStruct.Pin = MRF_INT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(MRF_INT_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(MRF_RESET_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : DM_Pin DP_Pin */
   GPIO_InitStruct.Pin = DM_Pin|DP_Pin;
@@ -323,107 +427,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
 }
 
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
-void StartLedThread(void const * argument){
-	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 1000;
-	xLastWakeTime=xTaskGetTickCount();
-
-	int address = 5;
-	int value = 7;
-	while(1){
-		Message skicka(++address,++value);
-		if(errQUEUE_FULL == xQueueSend(mailboxes[0], &skicka,10)){
-			//error handling, message not sent.
-		}
-		vTaskDelayUntil(&xLastWakeTime, xFrequency);
-	}
-
-}
-void StartButtonThread(void const * argument){
-	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 1000;
-	xLastWakeTime=xTaskGetTickCount();
-
-	while(1){
-		Message mottaget;
-		if(errQUEUE_FULL == xQueueReceive(mailboxes[0],&mottaget,10)){
-			//error handling, message not received.
-
-		}
-		vTaskDelayUntil(&xLastWakeTime, xFrequency);
-	}
-}
-
-/* StartMRFThread function */
-void StartRadioThread(void const * argument)
-{
-	pinIO reset;
-	reset.GPIO = MRF_RESET_GPIO_Port;
-	reset.GPIO_Pin = MRF_RESET_Pin;
-	//reset->YOLO = 12;
-
-	pinIO cs;
-	cs.GPIO = MRF_CS_GPIO_Port;
-	cs.GPIO_Pin = MRF_CS_Pin;
-
-	pinIO interrupt;
-	interrupt.GPIO = MRF_INT_GPIO_Port;
-	interrupt.GPIO_Pin = MRF_INT_Pin;
-
-	mrf24j = new Mrf24j(&hspi2, reset, cs, interrupt);
-	int kalle = sizeof(mrf24j);
-
-	mrf24j->reset();
-	mrf24j->set_pan(0xcafe);
-	// This is _our_ address
-	mrf24j->address16_write(0x6001);
-
-	mrf24j->init();
-
-	TickType_t xLastWakeTime;
-	const TickType_t xFrequency = 1000;
-	xLastWakeTime=xTaskGetTickCount();
-	while(1){
-		mrf24j->run();
-		vTaskDelayUntil(&xLastWakeTime, xFrequency);
-	}
-
-
-}
-
-void ledToggle(uint8_t *toggled){
-	if(*toggled == 0){
-		*toggled = 1;
-		HAL_GPIO_WritePin(LD9_GPIO_Port, LD9_Pin, GPIO_PIN_RESET);
-	}else{
-		*toggled = 0;
-		HAL_GPIO_WritePin(LD9_GPIO_Port, LD9_Pin, GPIO_PIN_SET);
-	}
-	//osDelay(10);
-}
-/* USER CODE BEGIN 4 */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	if(GPIO_Pin == MRF_INT_Pin){
-		mrf24j->interrupt_handler();
-		//Enable IRQ
-		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-	}
-
-
-
-}
-
-/* USER CODE END 5 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
@@ -460,13 +468,12 @@ void assert_failed(uint8_t* file, uint32_t line)
 
 #endif
 
+/**
+  * @}
+  */
 
 /**
   * @}
-  */ 
-
-/**
-  * @}
-*/ 
+*/
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
